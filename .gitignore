@@ -1,0 +1,6 @@
+/.venv
+/new_env
+/X_test.npy
+/X_train.npy
+/y_test.npy
+/y_train.npy
