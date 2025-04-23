@@ -89,8 +89,13 @@ def preprocess_image(img_path):
 
 
 # # Display the images
-# cv2.imshow('Original Image', img)
-# cv2.imshow('White Balanced Image', img_wb)
+img = cv2.imread('NJN/jaundice/jaundice (1).jpg')
+cv2.imshow('Original Image', img)
+img_wb= white_balance(img)
+cv2.imshow('White Balanced Image', img_wb)
+new_img= preprocess_image(img)
+cv2.imshow('Preprocessed Image', new_img)
+
 # if x is not None:
 #     cv2.rectangle(img_wb, (x, y), (x+w, y+h), (0, 255, 0), 2)
 #     cv2.imshow('Skin ROI', skin_roi)

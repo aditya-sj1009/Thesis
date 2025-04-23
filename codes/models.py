@@ -5,12 +5,11 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
-
-from tensorflow.keras.models import Sequential
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.layers import Dense, Dropout, Flatten, GlobalAveragePooling2D, Input
-from tensorflow.keras.models import Model
 
 # Example dataset (replace with your actual feature matrix and labels)
 # X: Feature matrix (e.g., extracted features from preprocessed images)
@@ -138,3 +137,22 @@ def build_resnet50_model(input_shape, num_classes):
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
+def build_cnn_feature_extractor(input_shape):
+    base_model = ResNet50(include_top=False, weights='imagenet', input_shape=input_shape)
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
+    feature_extractor = Model(inputs=base_model.input, outputs=x)
+    return feature_extractor
+
+def train_cnn_svm_model(feature_extractor, X_train, y_train):
+    features = feature_extractor.predict(X_train)
+    scaler = StandardScaler()
+    features_scaled = scaler.fit_transform(features)
+    svm = SVC(kernel='linear', probability=True, class_weight='balanced')
+    svm.fit(features_scaled, y_train)
+    return scaler, svm
+
+def predict_cnn_svm(feature_extractor, scaler, svm, X_test):
+    features = feature_extractor.predict(X_test)
+    features_scaled = scaler.transform(features)
+    return svm.predict(features_scaled)
