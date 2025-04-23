@@ -2,6 +2,13 @@ import cv2
 import numpy as np
 from preprocessing import skin_detection
 from skimage.feature import graycomatrix, graycoprops
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.preprocessing import StandardScaler
+
+
+
+
 
 # 1. Color Histogram Features
 def extract_color_histogram_features(img):
@@ -46,57 +53,19 @@ def extract_ycbcr_features(img):
     return np.array([y_mean, cb_mean, cr_mean, y_std, cb_std, cr_std])
 
 
-
 # Combine All Features into a Single Feature Vector
 def combine_features(img):
     """Combines all extracted features into a single feature vector."""
     skin_roi, _ , _ , _ , _ = skin_detection(img)
+    
     color_histogram_features = extract_color_histogram_features(skin_roi)
+    yellow_bin= color_histogram_features
+    yellow_bin_2d = yellow_bin.reshape(1, -1)
+    
     texture_features = extract_texture_features(skin_roi)
     ycbcr_features = extract_ycbcr_features(skin_roi)
-    combined_features = np.concatenate((color_histogram_features[0:50],
+    combined_features = np.concatenate((yellow_bin_2d.flatten(),
                                         texture_features,
                                         ycbcr_features))
-    return combined_features
-
-# img = cv2.imread('NJN/normal/normal (1).jpg')
-# final_feature_vector = combine_features(img)
-
-# # # Print Feature Vector Shape and Example Values
-# print(f"Final Feature Vector Shape: {final_feature_vector.shape}")
-# print(f"Example Feature Values: {final_feature_vector[:10]}")
-
-# # Extract Color Histogram Features
-# histogram_feature= extract_color_histogram_features(img)
-# print(f"histogram features: {histogram_feature.shape}")
-# i=0
-# for item in enumerate(histogram_feature):
-#     i+=1
-#     print(f"Shape of item {i}: {np.array(item).shape}")
     
-
-
-# Extract Texture Features
-# texture_feature = extract_texture_features(img)
-# print(f"texture features: {texture_feature.shape}")
-# i=0
-# for item in enumerate(texture_feature):
-#     i+=1
-#     print(f"Shape of item {i}: {np.array(item).shape}")
-
-# print (texture_feature)
-
-
-# # Extract YCbCr Features
-
-# ycbcr_feature = extract_ycbcr_features(img)
-# i=0
-# for item in enumerate(ycbcr_feature):
-#     i+=1
-#     print(f"Shape of item {i}: {np.array(item).shape}")
-
-# print(f"ycbcr features: {ycbcr_feature.shape}")
-# print (ycbcr_feature)
-
-# # Save Feature Vector for ML Model Input
-# np.save('feature_vector.npy', final_feature_vector)  # Save as .npy file
+    return combined_features
