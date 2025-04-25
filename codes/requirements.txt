@@ -5,3 +5,6 @@ numpy
 tensorflow
 matplotlib
 pandas
+xgboost
+torch
+torchvision

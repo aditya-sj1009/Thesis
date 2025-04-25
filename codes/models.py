@@ -1,3 +1,6 @@
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef
@@ -10,6 +13,10 @@ from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.layers import Dense, Dropout, Flatten, GlobalAveragePooling2D, Input
+from transformers import TFViTForImageClassification, ViTImageProcessor
+import tensorflow as tf
+import torch
+from torch.utils.data import DataLoader, TensorDataset
 
 # Example dataset (replace with your actual feature matrix and labels)
 # X: Feature matrix (e.g., extracted features from preprocessed images)
@@ -70,6 +77,20 @@ def evaluate_dl_model(model, X_test, y_test):
         "F1 Score": f1,
         "Matthews Correlation Coefficient": mcc
     }
+    
+def evaluate_predictions(y_true, y_pred):
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, zero_division=0)
+    recall = recall_score(y_true, y_pred, zero_division=0)
+    f1 = f1_score(y_true, y_pred, zero_division=0)
+    mcc = matthews_corrcoef(y_true, y_pred)
+    return {
+        "Accuracy": accuracy,
+        "Precision": precision,
+        "Recall": recall,
+        "F1 Score": f1,
+        "Matthews Correlation Coefficient": mcc
+    }  
 
 
 # 1. Support Vector Machine (SVM)
@@ -156,3 +177,31 @@ def predict_cnn_svm(feature_extractor, scaler, svm, X_test):
     features = feature_extractor.predict(X_test)
     features_scaled = scaler.transform(features)
     return svm.predict(features_scaled)
+
+def build_tf_vit_model(num_classes=2, model_name="google/vit-base-patch16-224-in21k"):
+    model = TFViTForImageClassification.from_pretrained(
+        model_name,
+        num_labels=num_classes,
+        ignore_mismatched_sizes=True
+    )
+    processor = ViTImageProcessor.from_pretrained(model_name)
+    return model, processor
+
+def train_tf_vit_model(model, processor, X_train_img, y_train, epochs=5, batch_size=16, lr=2e-5):
+    # Preprocess images
+    inputs = processor(list(X_train_img), return_tensors="tf", size=224, do_rescale=True)
+    pixel_values = inputs['pixel_values']
+    labels = tf.convert_to_tensor(y_train, dtype=tf.int32)
+    dataset = tf.data.Dataset.from_tensor_slices((pixel_values, labels)).batch(batch_size)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+    loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    model.compile(optimizer=optimizer, loss=loss_fn, metrics=['accuracy'])
+    model.fit(dataset, epochs=epochs)
+    return model
+
+def predict_tf_vit_model(model, processor, X_test_img, batch_size=16):
+    inputs = processor(list(X_test_img), return_tensors="tf", size=224, do_rescale=True)
+    pixel_values = inputs['pixel_values']
+    preds = model(pixel_values).logits
+    y_pred = tf.argmax(preds, axis=-1).numpy()
+    return y_pred
