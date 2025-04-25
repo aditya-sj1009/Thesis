@@ -89,13 +89,18 @@ def preprocess_image(img_path):
 
 
 # # Display the images
-img = cv2.imread('NJN/jaundice/jaundice (1).jpg')
+
+img_path = 'NJN\jaundice\jaundice_(1).jpg'
+img = cv2.imread(img_path)
+
 cv2.imshow('Original Image', img)
 img_wb= white_balance(img)
 cv2.imshow('White Balanced Image', img_wb)
-new_img= preprocess_image(img)
+new_img= preprocess_image(img_path)
 cv2.imshow('Preprocessed Image', new_img)
 
+cv2.waitKey(0)  # Wait indefinitely for a key press
+cv2.destroyAllWindows()
 # if x is not None:
 #     cv2.rectangle(img_wb, (x, y), (x+w, y+h), (0, 255, 0), 2)
 #     cv2.imshow('Skin ROI', skin_roi)
